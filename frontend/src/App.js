@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import axios from "axios";
+import ManageSessions from "./components/ManageSessions";
 const API = "http://localhost:3001";
 
 // === Utility axios instance dengan Interceptor 401 ===
@@ -220,8 +221,9 @@ function ChatHistory({ sessionId }) {
   return (
     <div className="history-card">
       <h3 className="section-title">Riwayat Pesan</h3>
-      <table className="msg-table">
-        <thead>
+      <div className="table-scroll">
+        <table className="msg-table">
+          <thead>
           <tr>
             <th>Tipe</th>
             <th>Pengirim</th>
@@ -245,7 +247,8 @@ function ChatHistory({ sessionId }) {
             </tr>
           ))}
         </tbody>
-      </table>
+        </table>
+      </div>
     </div>
   );
 }
@@ -257,6 +260,7 @@ function App() {
   const [sessionId, setSessionId] = useState("");
   const [waStatus, setWaStatus] = useState("");
   const [waInfo, setWaInfo] = useState(null);
+  const [menu, setMenu] = useState("dashboard");
 
   useEffect(() => {
     if (loggedIn) reloadSessions();
@@ -298,7 +302,18 @@ function App() {
       <aside className="sidebar">
         <div className="sidebar-logo">Clevio<span>PRO</span></div>
         <nav>
-          <div className="sidebar-item active">Dashboard</div>
+          <div
+            className={`sidebar-item ${menu === "dashboard" ? "active" : ""}`}
+            onClick={() => setMenu("dashboard")}
+          >
+            Dashboard
+          </div>
+          <div
+            className={`sidebar-item ${menu === "manage" ? "active" : ""}`}
+            onClick={() => setMenu("manage")}
+          >
+            Manage Session
+          </div>
         </nav>
       </aside>
       <div className="main-content">
@@ -331,20 +346,27 @@ function App() {
             >Logout</button>
           </div>
         </header>
-        <div className="dashboard-flex">
+        {menu === "dashboard" && (
+          <div className="dashboard-flex">
+            <div className="dashboard-section">
+              <SessionManager
+                sessionId={sessionId}
+                setSessionId={setSessionId}
+                sessions={sessions}
+                reloadSessions={reloadSessions}
+              />
+              <QRScanner sessionId={sessionId} />
+            </div>
+            <div className="dashboard-section flex-grow">
+              <ChatHistory sessionId={sessionId} />
+            </div>
+          </div>
+        )}
+        {menu === "manage" && (
           <div className="dashboard-section">
-            <SessionManager
-              sessionId={sessionId}
-              setSessionId={setSessionId}
-              sessions={sessions}
-              reloadSessions={reloadSessions}
-            />
-            <QRScanner sessionId={sessionId} />
+            <ManageSessions />
           </div>
-          <div className="dashboard-section flex-grow">
-            <ChatHistory sessionId={sessionId} />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
