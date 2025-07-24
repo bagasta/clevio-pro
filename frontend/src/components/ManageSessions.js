@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-const API = "http://localhost:3001";
+import api from "../api";
 
 const ManageSessions = () => {
   const [sessions, setSessions] = useState([]);
@@ -9,7 +8,7 @@ const ManageSessions = () => {
   const [loading, setLoading] = useState(false);
 
   const loadSessions = () => {
-    axios.get(`${API}/sessions`).then(res => setSessions(res.data.sessions || []));
+    api.get(`/sessions`).then(res => setSessions(res.data.sessions || []));
   };
 
   useEffect(() => { loadSessions(); }, []);
@@ -27,7 +26,7 @@ const ManageSessions = () => {
   const saveEdit = async () => {
     if (!editId) return;
     setLoading(true);
-    await axios.put(`${API}/sessions/${editId}`, {
+    await api.put(`/sessions/${editId}`, {
       newSessionId: form.session_id,
       webhookUrl: form.webhook_url
     });
@@ -37,13 +36,13 @@ const ManageSessions = () => {
   };
 
   const resetSession = async (id) => {
-    await axios.post(`${API}/sessions/${id}/reset`);
+    await api.post(`/sessions/${id}/reset`);
     loadSessions();
   };
 
   const deleteSession = async (id) => {
     if (!window.confirm("Hapus session ini?")) return;
-    await axios.delete(`${API}/sessions/${id}`);
+    await api.delete(`/sessions/${id}`);
     loadSessions();
   };
 

@@ -1,31 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./App.css";
-import axios from "axios";
 import ManageSessions from "./components/ManageSessions";
-const API = "http://localhost:3001";
-
-// === Utility axios instance dengan Interceptor 401 ===
-const api = axios.create({ baseURL: API });
-api.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem("token");
-    if (token) config.headers.Authorization = "Bearer " + token;
-    return config;
-  },
-  error => Promise.reject(error)
-);
-
-// ==== Interceptor RESPONSE (Logout jika 401) ====
-api.interceptors.response.use(
-  res => res,
-  err => {
-    if (err.response && err.response.status === 401) {
-      localStorage.removeItem("token");
-      window.location.reload(); // Paksa reload, langsung ke halaman login
-    }
-    return Promise.reject(err);
-  }
-);
+import api from "./api";
 
 // === LOGIN COMPONENT ===
 function Login({ onLogin }) {
@@ -37,7 +13,7 @@ function Login({ onLogin }) {
     e.preventDefault();
     setErr(""); setLoading(true);
     try {
-      const res = await axios.post(API + "/login", { username, password });
+      const res = await api.post("/login", { username, password });
       localStorage.setItem("token", res.data.token);
       onLogin();
     } catch {
