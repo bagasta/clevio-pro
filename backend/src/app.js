@@ -6,6 +6,8 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const axios = require('axios');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -86,6 +88,26 @@ app.put('/sessions/:sessionId/webhook', async (req, res) => {
   res.json({ session: result.rows[0] });
 });
 
+app.put('/sessions/:sessionId', async (req, res) => {
+  const { sessionId } = req.params;
+  const { newSessionId, webhookUrl } = req.body;
+  if (!newSessionId) return res.status(400).json({ error: "newSessionId required" });
+  if (!isValidSessionId(sessionId) || !isValidSessionId(newSessionId)) {
+    return res.status(400).json({ error: "SessionId hanya boleh huruf, angka, _ atau -" });
+  }
+  try {
+    const q = `UPDATE wa_sessions SET session_id=$1, webhook_url=$2, updated_at=NOW() WHERE session_id=$3 RETURNING *`;
+    const result = await pool.query(q, [newSessionId, webhookUrl, sessionId]);
+    if (sessions[sessionId]) {
+      sessions[newSessionId] = sessions[sessionId];
+      delete sessions[sessionId];
+    }
+    res.json({ session: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.delete('/sessions/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
   if (!isValidSessionId(sessionId)) return res.status(400).json({ error: "SessionId hanya boleh huruf, angka, _ atau -" });
@@ -94,6 +116,18 @@ app.delete('/sessions/:sessionId', async (req, res) => {
     sessions[sessionId].client.destroy();
     delete sessions[sessionId];
   }
+  res.json({ success: true });
+});
+
+app.post('/sessions/:sessionId/reset', async (req, res) => {
+  const { sessionId } = req.params;
+  if (!isValidSessionId(sessionId)) return res.status(400).json({ error: "SessionId hanya boleh huruf, angka, _ atau -" });
+  if (sessions[sessionId]) {
+    try { await sessions[sessionId].client.destroy(); } catch {}
+    delete sessions[sessionId];
+  }
+  const dir = path.join('.wwebjs_auth', sessionId);
+  fs.rmSync(dir, { recursive: true, force: true });
   res.json({ success: true });
 });
 
